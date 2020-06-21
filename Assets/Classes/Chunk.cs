@@ -16,6 +16,9 @@ public class Chunk {
   private const int _VERTICES_PER_FIELD = 4;
   private const int _TRIANGLES_PER_FIELD = 6;
 
+
+
+  public static bool GenerateTrees = true;
   public float[,] HeightMap { get; private set; }
   public ObjectMap ObjectMap { get; }
   public GameObject GameObject { get; private set; }
@@ -54,7 +57,9 @@ public class Chunk {
   public void Create() {
     this._GenerateTiles();
     this._CreateMesh();
-    this._GenerateTrees();
+
+    if (GenerateTrees)
+      this._GenerateTrees();
   }
 
   //makes map checkered

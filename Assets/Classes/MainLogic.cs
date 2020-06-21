@@ -6,6 +6,7 @@ using Terrain = Assets.Terrain;
 public class MainLogic : MonoBehaviour {
 
   public AnimationCurve HeightCurve;
+  public bool GenerateTrees;
   private int _lastKeyAmount;
   public Terrain Terrain { get; private set; } 
 
@@ -18,9 +19,10 @@ public class MainLogic : MonoBehaviour {
 
   // Start is called before the first frame update
   public void Start() {
-    this.fpsText = GameObject.Find("FPSText").GetComponent<Text>();  
+    this.fpsText = GameObject.Find("FPSText").GetComponent<Text>();
 
     //create terrain
+    Chunk.GenerateTrees = this.GenerateTrees;
     Chunk.HeightCurve = this.HeightCurve;
     var terrain = new Terrain(Camera.main.transform.position);
     this.Terrain = terrain;
