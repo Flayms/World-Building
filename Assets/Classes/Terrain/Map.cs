@@ -3,7 +3,7 @@ using System;
 using System.Drawing;
 
 namespace Assets {
-  public class Terrain {
+  public class Map {
 
     private Point _location;
 
@@ -11,7 +11,7 @@ namespace Assets {
     private const int _ACTIVE_CHUNK_AMOUNT = 25;
     public Chunk[] Chunks = new Chunk[_ACTIVE_CHUNK_AMOUNT]; //todo: implement sometime
 
-    public Terrain(Vector3 playerLocation) {
+    public Map(Vector3 playerLocation) {
       var location = _GetChunkLocation(playerLocation);
       this._location = location;
       this._CreateFirstChunks();

@@ -1,33 +1,38 @@
-﻿using System;
+﻿using Libaries;
+using System.Collections.Generic;
+using System.Security.Cryptography;
 using UnityEngine;
 using UnityEngine.UI;
-using Terrain = Assets.Terrain;
+using Map = Assets.Map;
 
+//todo: 4 modes => building, street, interact, destruction
 public class MainLogic : MonoBehaviour {
 
   public AnimationCurve HeightCurve;
   public bool GenerateTrees;
-  private int _lastKeyAmount;
-  public Terrain Terrain { get; private set; } 
+  public Map Map { get; private set; } 
 
-  private string _selectedObjectName = "tree";
+  public TileElement SelectedElement { get; private set; }
 
   private TileHover _tileHover;
 
   private Text fpsText;
   private float deltaTime;
+  private readonly List<GameObject> _buttons = new List<GameObject>(); //todo: could use array
 
   // Start is called before the first frame update
   public void Start() {
+    OctaveNoise.MaxValue = 1; //todo: dunno if this should be here tbh
     this.fpsText = GameObject.Find("FPSText").GetComponent<Text>();
+    this.SelectedElement = ObjectMap.TILE_ELEMENTS["tree"];
 
     //create terrain
     Chunk.GenerateTrees = this.GenerateTrees;
-    Chunk.HeightCurve = this.HeightCurve;
-    var terrain = new Terrain(Camera.main.transform.position);
-    this.Terrain = terrain;
+    Terrain.HeightCurve = this.HeightCurve;
+    var map = new Map(Camera.main.transform.position);
+    this.Map = map;
 
-    this._tileHover = new TileHover(terrain);
+    this._tileHover = new TileHover(map, this);
 
     this._CreateButtons();   
   }
@@ -47,51 +52,42 @@ public class MainLogic : MonoBehaviour {
   }
 
   private void _CreateButton(GameObject prefab, GameObject canvas, string name, Vector3 position) { 
-    var button = Instantiate(prefab, position, Quaternion.identity);
-    button.SetActive(true);
-    button.transform.SetParent(canvas.transform);
-    button.name = name;
+    var gObject = Instantiate(prefab, position, Quaternion.identity);
+
+    gObject.SetActive(true);
+    gObject.transform.SetParent(canvas.transform);
+    gObject.name = name;     
+    this._buttons.Add(gObject);
+
     //set text
-    button.transform.Find("Text").gameObject.transform.GetComponent<Text>().text = name;
+    gObject.transform.Find("Text").gameObject.transform.GetComponent<Text>().text = name;
     //set method
-    button.GetComponent<Button>().onClick.AddListener(delegate { OnButtonClick(name); });
+    gObject.GetComponent<Button>().onClick.AddListener(delegate { OnButtonClick(name); });
   }
 
   // Update is called once per frame
   public void Update() {
     this._ShowFPS();
-    Terrain.Update(Camera.main.transform.position);
+    Map.Update(Camera.main.transform.position);
 
-    //todo: totally braindead but works for debug
-    var keys = this.HeightCurve.keys.Length;
-    if (keys!= this._lastKeyAmount) {
-      this._lastKeyAmount = keys;
-      //this.Terrain.Dispose();
-      //this.Start();
-    }
-
+    if (Input.GetKey(KeyCode.T))
+      Debug.Break();
 
     this._tileHover.HandleHover();
 
     var chunk = this._tileHover.Chunk;
-    // if (chunk == null) //todo: might be removable
-    //  throw new Exception("No Fitting Chunk found!");
-
     var location = this._tileHover.Location;
     var x = location.X;
     var z = location.Y;
     var objectMap = chunk.ObjectMap;
 
     //if keydown and tile not yet set
-    if (Input.GetMouseButtonDown(0) && objectMap.GetTile(x, z) != 1) {
-      if (!ObjectMap.TILE_ELEMENTS.TryGetValue(this._selectedObjectName, out var tileElement))
-        throw new IndexOutOfRangeException();
+    if (Input.GetMouseButtonDown(0) && objectMap.GetTile(x, z) != 1 && !chunk.Water.IsWater(x, z))
+      objectMap.SetTile(x, z, this.SelectedElement);
 
-      objectMap.SetTile(x, z, tileElement);
-    }
 
     if (Input.GetKey(KeyCode.S)) {
-      chunk.MakeStreet(x, z);
+      chunk.Terrain.MakeStreet(x, z);
       this._tileHover.Sprite = Sprites.Street;
     }
   }
@@ -103,8 +99,15 @@ public class MainLogic : MonoBehaviour {
   }
 
   public void OnButtonClick(string objectName) {
-    this._selectedObjectName = objectName;
+
+    //change selected button colour
+    foreach (var button in this._buttons) {
+      var text = button.transform.Find("Text").gameObject.transform.GetComponent<Text>().text;
+      button.GetComponent<Image>().color = text == objectName
+        ? Color.green
+        : Color.white;
+    }
+
+    this.SelectedElement = ObjectMap.TILE_ELEMENTS[objectName];
   }
-
-
 }
