@@ -11,16 +11,26 @@ public class MainLogic : MonoBehaviour {
 
   private string _selectedObjectName = "tree";
 
+  private TileHover _tileHover;
+
+  private Text fpsText;
+  private float deltaTime;
+
   // Start is called before the first frame update
   public void Start() {
-    this.fpsText = GameObject.Find("FPSText").GetComponent<Text>();
+    this.fpsText = GameObject.Find("FPSText").GetComponent<Text>();  
 
     //create terrain
     Chunk.HeightCurve = this.HeightCurve;
     var terrain = new Terrain(Camera.main.transform.position);
     this.Terrain = terrain;
-    
 
+    this._tileHover = new TileHover(terrain);
+
+    this._CreateButtons();   
+  }
+
+  private void _CreateButtons() {
     //create buttons
     var canvas = GameObject.Find("Canvas");
     var prefab = canvas.transform.Find("Button Prefab").gameObject;
@@ -29,24 +39,25 @@ public class MainLogic : MonoBehaviour {
     position.x -= width;
 
     foreach (var pair in ObjectMap.TILE_ELEMENTS) {
-      var name = pair.Key;
       position.x += width;
-      var button = Instantiate(prefab, position, Quaternion.identity);
-      button.SetActive(true);
-      button.transform.SetParent(canvas.transform);
-      button.name = name;
-      //set text
-      button.transform.Find("Text").gameObject.transform.GetComponent<Text>().text = name;
-      //set method
-      button.GetComponent<Button>().onClick.AddListener(delegate { OnButtonClick(name); });
+      this._CreateButton(prefab, canvas, pair.Key, position);
     }
   }
 
-
+  private void _CreateButton(GameObject prefab, GameObject canvas, string name, Vector3 position) { 
+    var button = Instantiate(prefab, position, Quaternion.identity);
+    button.SetActive(true);
+    button.transform.SetParent(canvas.transform);
+    button.name = name;
+    //set text
+    button.transform.Find("Text").gameObject.transform.GetComponent<Text>().text = name;
+    //set method
+    button.GetComponent<Button>().onClick.AddListener(delegate { OnButtonClick(name); });
+  }
 
   // Update is called once per frame
   public void Update() {
-    this.ShowFPS();
+    this._ShowFPS();
     Terrain.Update(Camera.main.transform.position);
 
     //todo: totally braindead but works for debug
@@ -57,14 +68,33 @@ public class MainLogic : MonoBehaviour {
       //this.Start();
     }
 
-    if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out var hit)) 
-      this._HandleGroundClick(hit.point, hit.collider.gameObject);
+
+    this._tileHover.HandleHover();
+
+    var chunk = this._tileHover.Chunk;
+    // if (chunk == null) //todo: might be removable
+    //  throw new Exception("No Fitting Chunk found!");
+
+    var location = this._tileHover.Location;
+    var x = location.X;
+    var z = location.Y;
+    var objectMap = chunk.ObjectMap;
+
+    //if keydown and tile not yet set
+    if (Input.GetMouseButtonDown(0) && objectMap.GetTile(x, z) != 1) {
+      if (!ObjectMap.TILE_ELEMENTS.TryGetValue(this._selectedObjectName, out var tileElement))
+        throw new IndexOutOfRangeException();
+
+      objectMap.SetTile(x, z, tileElement);
+    }
+
+    if (Input.GetKey(KeyCode.S)) {
+      chunk.MakeStreet(x, z);
+      this._tileHover.Sprite = Sprites.Street;
+    }
   }
 
-
-  public Text fpsText;
-  public float deltaTime;
-  private void ShowFPS() {
+  private void _ShowFPS() {
     deltaTime += (Time.deltaTime - deltaTime) * 0.1f;
     float fps = 1.0f / deltaTime;
     fpsText.text = Mathf.Ceil(fps) + " fps";
@@ -74,43 +104,5 @@ public class MainLogic : MonoBehaviour {
     this._selectedObjectName = objectName;
   }
 
-  private void _HandleGroundClick(Vector3 location, GameObject gObject) {
-    var x = 0;
-    var z = 0;
-    var terrain = this.Terrain;
-    Chunk chunk = null;
 
-    //todo: better way to do this
-    //get current chunk and activate tile //todo: should put this logic into terrain
-    foreach(var activeChunk in terrain.Chunks) {
-
-      if (activeChunk.GameObject == gObject) {
-        chunk = activeChunk;
-        x = (int)(location.x - chunk.Location.X);
-        z = (int)(location.z - chunk.Location.Y);
-        chunk.Hover(x, z);
-        break;
-      }
-    }
-
-    if (chunk == null) //todo: might be removable
-      throw new Exception("No Fitting Chunk found!");
-
-    var objectMap = chunk.ObjectMap;
-
-    if (Input.GetMouseButtonDown(0)) {
-      if (objectMap.GetTile(x, z) == 1)
-        return;
-
-      if (!ObjectMap.TILE_ELEMENTS.TryGetValue(this._selectedObjectName, out var tileElement))
-        throw new IndexOutOfRangeException();
-
-      objectMap.SetTile(x, z, tileElement);
-    }
-
-    if (Input.GetKey(KeyCode.S)) {
-      chunk.MakeStreet(x, z);
-    }
-
-  }
 }

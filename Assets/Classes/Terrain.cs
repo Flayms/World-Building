@@ -17,7 +17,6 @@ namespace Assets {
       this._CreateFirstChunks();
     }
 
-
     public void Update(Vector3 playerLocation) {
       var newLocation = _GetChunkLocation(playerLocation);
       if (newLocation == this._location)
@@ -60,7 +59,6 @@ namespace Assets {
             if (chunk.Location == location) {
               chunkExists = true;
               newChunks[i++] = chunk;
-
             }
           }
 

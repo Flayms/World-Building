@@ -1,6 +1,5 @@
 ﻿using Assets.Classes;
 using Libaries;
-using System;
 using System.Collections.Generic;
 using System.Drawing;
 using UnityEngine;
@@ -10,9 +9,9 @@ public class Chunk {
 
   public const int WIDTH = 50;
   public const int DEPTH = 50;
-  private const int _HEIGHT = 8;
+  private const int _HEIGHT = 9;
   private const float _STEP_SIZE = 0.25f;
-  private const float _NOISE_SCALE = 0.035f;
+  private const float _NOISE_SCALE = 0.03f;
   private const int _OCTAVES = 5;
   private const int _VERTICES_PER_FIELD = 4;
   private const int _TRIANGLES_PER_FIELD = 6;
@@ -33,20 +32,13 @@ public class Chunk {
   private int _tempX;
   private int _tempZ;
 
-  public enum Sprites {
-    Grass,
-    GrassDark,
-    GrassSelector,
-    GrassDarkSelector,
-    Street
-  }
-
   private readonly IReadOnlyDictionary<Sprites, Point> _spriteLocations = new Dictionary<Sprites, Point> {
     {Sprites.Grass, new Point(0, 1)},
     {Sprites.GrassDark, new Point(1, 1)},
     {Sprites.GrassSelector, new Point(0, 0)},
     {Sprites.GrassDarkSelector, new Point(1, 0)},
     {Sprites.Street, new Point(0, 2)},
+    {Sprites.White, new Point(1, 2) }
   };
 
   private readonly SpriteSelector _spriteSelector = new SpriteSelector(2, 3);
@@ -181,6 +173,9 @@ public class Chunk {
     return heightMap;
   }
 
+  public void SetSprite(int x, int z, Sprites sprite) => this._SetUV(this._squareIndexes[x, z], sprite);
+  public Sprites GetSprite(int x, int z) => this._spriteMap[x, z];
+
   //index := the index in the uv array
   private void _SetUV(int index, Sprites sprite) {
     var loc = this._spriteLocations[sprite];
@@ -190,8 +185,11 @@ public class Chunk {
     uvs[index + 1] = newUVs[1];
     uvs[index + 2] = newUVs[2];
     uvs[index + 3] = newUVs[3];
+
+    this._mesh.uv = this._uv;
   }
 
+ 
   public void Hover(int x, int z) {
     var oldIndex = this._squareIndexes[this._tempX, this._tempZ];
      var index = this._squareIndexes[x, z];
@@ -201,7 +199,6 @@ public class Chunk {
       this._SetUV(oldIndex, this._spriteMap[this._tempX, this._tempZ]);
     //update new field
     this._SetUV(index, this._spriteMap[x, z] + 2);
-    this._mesh.uv = this._uv;
     this._tempX = x;
     this._tempZ = z;
   }
@@ -245,7 +242,7 @@ public class Chunk {
 
     for (var z = 0; z < DEPTH; ++z)
       for (var x = 0; x < WIDTH; ++x) {
-        var rnd = UnityEngine.Random.value;
+        var rnd = Random.value;
         if ((noiseMap[x, z] > threshhold && rnd < spawnProbability) ||
           rnd < standardProbality)
           objMap.SetTile(x, z, ObjectMap.TILE_ELEMENTS["tree"]);
