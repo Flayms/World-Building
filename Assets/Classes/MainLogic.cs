@@ -70,9 +70,6 @@ public class MainLogic : MonoBehaviour {
     this._ShowFPS();
     Map.Update(Camera.main.transform.position);
 
-    if (Input.GetKey(KeyCode.T))
-      Debug.Break();
-
     this._tileHover.HandleHover();
 
     var chunk = this._tileHover.Chunk;
@@ -82,7 +79,7 @@ public class MainLogic : MonoBehaviour {
     var objectMap = chunk.ObjectMap;
 
     //if keydown and tile not yet set
-    if (Input.GetMouseButtonDown(0) && objectMap.GetTile(x, z) != 1 && !chunk.Water.IsWater(x, z))
+    if (Input.GetMouseButtonDown(0))
       objectMap.SetTile(x, z, this.SelectedElement);
 
 
