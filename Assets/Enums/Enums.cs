@@ -8,8 +8,14 @@
 public enum Sprites {
   Grass,
   GrassDark,
-  GrassSelector,
-  GrassDarkSelector,
+  Red,
+  Red2,
   Street,
   White
+}
+
+public enum InteractionModes {
+  Interact,
+  Build,
+  Destroy
 }

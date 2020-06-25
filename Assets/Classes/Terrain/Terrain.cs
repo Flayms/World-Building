@@ -38,8 +38,8 @@ public class Terrain : GeneratedObject {
   private readonly IReadOnlyDictionary<Sprites, Point> _spriteLocations = new Dictionary<Sprites, Point> {
     {Sprites.Grass, new Point(0, 1)},
     {Sprites.GrassDark, new Point(1, 1)},
-    {Sprites.GrassSelector, new Point(0, 0)},
-    {Sprites.GrassDarkSelector, new Point(1, 0)},
+    {Sprites.Red, new Point(0, 0)},
+    {Sprites.Red2, new Point(1, 0)},
     {Sprites.Street, new Point(0, 2)},
     {Sprites.White, new Point(1, 2) }
   };
@@ -74,6 +74,7 @@ public class Terrain : GeneratedObject {
     for (var z = 0; z < depth; ++z) {
       for (var x = 0; x < width; ++x) {
         var y = heightMap[x, z];
+        
         var nextX = x + 1;
         var nextZ = z + 1;
         var spriteLoc = spriteLocations[this._spriteMap[x, z]];
@@ -81,10 +82,9 @@ public class Terrain : GeneratedObject {
 
         //create vertices for top side
         vertices.Add(new Vector3(x, y, z));
-        vertices.Add(new Vector3(x + 1, y, z));
-        vertices.Add(new Vector3(x, y, z + 1));
-        vertices.Add(new Vector3(x + 1, y, z + 1));
-
+        vertices.Add(new Vector3(nextX, y, z));
+        vertices.Add(new Vector3(x, y, nextZ));
+        vertices.Add(new Vector3(nextX, y, nextZ));
 
         uvs.AddRange(newUVs);
         AddTriangles(i, triangles);
@@ -92,7 +92,7 @@ public class Terrain : GeneratedObject {
         i += 4;
 
         //if x-axe height difference, create vertical square side
-        var nextY = heightMap[x + 1, z];
+          var nextY = heightMap[x + 1, z];
         if (y != nextY) {
           vertices.Add(new Vector3(nextX, y, z));
           vertices.Add(new Vector3(nextX, nextY, z));
@@ -105,7 +105,7 @@ public class Terrain : GeneratedObject {
           i += 4;
         }
 
-        //if y - axe height difference, create vertical square side
+        //if y-axe height difference, create vertical square side
         nextY = heightMap[x, z + 1];
         if (y != nextY) {
           vertices.Add(new Vector3(x, y, nextZ));

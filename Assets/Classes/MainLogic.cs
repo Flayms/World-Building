@@ -1,6 +1,5 @@
 ﻿using Libaries;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using UnityEngine;
 using UnityEngine.UI;
 using Map = Assets.Map;
@@ -12,9 +11,10 @@ public class MainLogic : MonoBehaviour {
   public bool GenerateTrees;
   public Map Map { get; private set; } 
 
-  public TileElement SelectedElement { get; private set; }
+  public ITileElement SelectedElement { get; private set; }
+  public Rotation Rotation;
 
-  private TileHover _tileHover;
+  private WorldInteraction _tileHover;
 
   private Text fpsText;
   private float deltaTime;
@@ -32,7 +32,7 @@ public class MainLogic : MonoBehaviour {
     var map = new Map(Camera.main.transform.position);
     this.Map = map;
 
-    this._tileHover = new TileHover(map, this);
+    this._tileHover = new WorldInteraction(map, this);
 
     this._CreateButtons();   
   }
@@ -40,7 +40,7 @@ public class MainLogic : MonoBehaviour {
   private void _CreateButtons() {
     //create buttons
     var canvas = GameObject.Find("Canvas");
-    var prefab = canvas.transform.Find("Button Prefab").gameObject;
+    var prefab = canvas.transform.Find("btnPrefabBuilding").gameObject;
     var width = prefab.GetComponent<RectTransform>().rect.width;
     var position = prefab.transform.position;
     position.x -= width;
@@ -72,6 +72,10 @@ public class MainLogic : MonoBehaviour {
 
     this._tileHover.HandleHover();
 
+    if (Input.GetAxis("Mouse ScrollWheel") > 0f) {
+      this.Rotation = (Rotation)(((int)this.Rotation + 90) % 270);
+    }
+
     var chunk = this._tileHover.Chunk;
     var location = this._tileHover.Location;
     var x = location.X;
@@ -80,7 +84,7 @@ public class MainLogic : MonoBehaviour {
 
     //if keydown and tile not yet set
     if (Input.GetMouseButtonDown(0))
-      objectMap.SetTile(x, z, this.SelectedElement);
+      objectMap.SetTile(x, z, this.SelectedElement, this.Rotation);
 
 
     if (Input.GetKey(KeyCode.S)) {
