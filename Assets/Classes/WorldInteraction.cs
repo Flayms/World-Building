@@ -30,6 +30,13 @@ public class WorldInteraction {
     this._sprites[0, 0] = this.Chunk.Terrain.GetSprite(this.Location.X, this.Location.Y); 
   }
 
+  public void HandleBuildingClick(int posX, int posZ, BuildingInfo buildingInfo, Rotation rotation) {
+    var objectMap = this.Chunk.ObjectMap;
+
+    if (objectMap.IsPlaceAble(posX, posZ, buildingInfo.GetRotatedSize(rotation)))
+      objectMap.PlaceBuilding(posX, posZ, buildingInfo, rotation);
+  }
+
   public void HandleHover() {
     if (!Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out var hit))
       return;
@@ -48,7 +55,8 @@ public class WorldInteraction {
         continue;
 
       var chunk = activeChunk;
-      var size = this._logic.SelectedElement.Size;
+      var logic = this._logic;
+      var size = logic.SelectedElement.GetRotatedSize(logic.Rotation);
       int x;
       int y;
       var cursorX = (int)(location.x - chunk.Location.X);
@@ -56,7 +64,7 @@ public class WorldInteraction {
       var endX = this._sprites.GetLength(0);
       var endY = this._sprites.GetLength(1);
 
-      chunk.ObjectMap.IsPlaceable(cursorX, cursorY, this._logic.SelectedElement, out var placeMap);
+      var placeMap = chunk.ObjectMap.GetPlaceMap(cursorX, cursorY, size);
 
       //set last sprites back
       for (y = 0; y < endY; ++y)

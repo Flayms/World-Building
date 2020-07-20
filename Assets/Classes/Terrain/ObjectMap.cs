@@ -5,16 +5,16 @@ using UnityEngine;
 
 public class ObjectMap {
   private readonly int[,] _objectMap;
-  private readonly List<GameObject> _objects = new List<GameObject>();
+
+  private readonly List<Building> _buildings = new List<Building>();
   private readonly Point _chunkPosition;
   private readonly Chunk _chunk;
 
-  public static readonly IReadOnlyDictionary<string, ITileElement> TILE_ELEMENTS = new List<ITileElement> {
-    new Building("house", new Size(3, 3), 0.5f),
-    new Building("house 2", new Size(2, 3), 0.6f),
-    new Building("tree", new Size(1, 1), 0.7f),
-    new Building("tree 2", new Size(1, 1), 0.8f),
-    new Street("street"),
+  public static readonly IReadOnlyDictionary<string, BuildingInfo> TILE_ELEMENTS = new List<BuildingInfo> {
+    new BuildingInfo("house", new Size(3, 3), 0.5f),
+    new BuildingInfo("house 2", new Size(2, 3), 0.6f),
+    new BuildingInfo("tree", new Size(1, 1), 0.7f),
+    new BuildingInfo("tree 2", new Size(1, 1), 0.8f),
   }.ToDictionary(x => x.Name);
 
   public ObjectMap(Point chunkPos, Chunk chunk) {
@@ -24,80 +24,75 @@ public class ObjectMap {
   }
 
   //todo: shouldnt do 2 things
-  public bool IsPlaceable(int posX, int posZ, ITileElement element, out bool[,] correctFields) {
-    var width = element.Size.Width;
-    var depth = element.Size.Height;
+  public bool[,] GetPlaceMap(int posX, int posZ, Size size) {
+    var width = size.Width;
+    var depth = size.Height;
     var chunk = this._chunk;
     var heightMap = chunk.Terrain.HeightMap;
     var height = heightMap[posX, posZ];
-    correctFields = new bool[width, depth];
-
-    if (element is Street) {
-      var result = this.GetTile(posX, posZ) != 1;
-      correctFields[0, 0] = result;
-      return result;
-    }
+    var correctFields = new bool[width, depth];
 
     var endX = posX + width;
-    var endZ = posZ + depth; 
-    var isPlaceable = true;  
+    var endZ = posZ + depth;  
 
     //check tiles
     for (var z = posZ; z < endZ; ++z)
       for (var x = posX; x < endX; ++x) {
 
         if (chunk.Water.IsWater(x, z)) {
-          correctFields = new bool[width, depth];
-          return false;
+          return new bool[width, depth];
         }
 
-        if (this.GetTile(x, z) == 0 && heightMap[x, z] == height)
+        if (!this.IsOccupied(x, z) && heightMap[x, z] == height)
           correctFields[x - posX, z - posZ] = true;
-        else
-          isPlaceable = false;
       }
 
-    return isPlaceable;
+    return correctFields;
   }
 
-  public void SetTile(int posX, int posZ, ITileElement element, Rotation rotation) {
+  public bool IsPlaceAble(int posX, int posZ, Size size) {
+    var width = size.Width;
+    var depth = size.Height;
     var chunk = this._chunk;
-    var endX = posX + element.Size.Width;
-    var endZ = posZ + element.Size.Height;
-    int x;
-    int z;
     var heightMap = chunk.Terrain.HeightMap;
     var height = heightMap[posX, posZ];
 
-    if (!this.IsPlaceable(posX, posZ, element, out _))
-      return;
+    var endX = posX + width;
+    var endZ = posZ + depth;
 
-    for (z = posZ; z < endZ; ++z)
-      for (x = posX; x < endX; ++x) {
+    for (var z = posZ; z < endZ; ++z)
+      for (var x = posX; x < endX; ++x) {
+        if (chunk.Water.IsWater(x, z) || this.IsOccupied(x, z) || heightMap[x, z] != height)
+          return false;
+      }
+
+    return true;
+  }
+
+  //need to check if placing is possible beforehand
+  public void PlaceBuilding(int posX, int posZ, BuildingInfo buildingInfo, Rotation rotation) {
+    var chunk = this._chunk;
+    var size = buildingInfo.GetRotatedSize(rotation);
+    var endX = posX + size.Width;
+    var endZ = posZ + size.Height;
+    var height = chunk.Terrain.HeightMap[posX, posZ];
+
+    for (var z = posZ; z < endZ; ++z)
+      for (var x = posX; x < endX; ++x) {
         this._objectMap[x, z] = 1;
       }
 
     var chunkPos = this._chunkPosition;
 
-    switch (element) {
-      case Building building:
-        this._objects.Add(
-          building.Create(new Vector3(posX + chunkPos.X, height, posZ + chunkPos.Y), rotation));
-        break;
-
-      case Street street:
-        street.Create(posX, posZ, this._chunk);
-        break;
-    }
+    this._buildings.Add(
+      new Building(buildingInfo, new Vector3(posX + chunkPos.X, height, posZ + chunkPos.Y), rotation));
   }
 
-  public int GetTile(int x, int z) {
-    return this._objectMap[x, z];
-  }
+  public bool IsOccupied(int x, int z) => this._objectMap[x, z] == 1 ? true : false;
 
   public void Destroy() {
-    foreach (var gObject in this._objects)
-      Object.Destroy(gObject);
+    foreach (var building in this._buildings)
+      Object.Destroy(building.GObject);
   }
 
 }

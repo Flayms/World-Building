@@ -5,6 +5,11 @@
   West = 270
 }
 
+public enum ObjectTypes {
+  Building,
+  Ground
+}
+
 public enum Sprites {
   Grass,
   GrassDark,

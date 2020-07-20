@@ -49,7 +49,7 @@ public class Chunk {
           rnd < standardProbality)
           && heightMap[x, z] > Water.WATER_LEVEL) {
 
-          objMap.SetTile(x, z, ObjectMap.TILE_ELEMENTS["tree"], (Rotation)((int)(Random.value * 4) * 90));
+          objMap.PlaceBuilding(x, z, ObjectMap.TILE_ELEMENTS["tree"], (Rotation)((int)(Random.value * 4) * 90));
         }
       }
   }

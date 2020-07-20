@@ -1,26 +1,22 @@
 ﻿using System.Drawing;
 using UnityEngine;
-
-public struct Building : ITileElement {
-  public string Name { get; }
+  public class Building {
+  public GameObject GObject { get; }
+  public BuildingInfo Info { get; }
+  public Rotation Rotation { get; }
   public Size Size { get; }
 
-  private readonly Vector3 _positionOffset;
-  private readonly float _scaleFactor;
+  public Vector3 Location => GObject.transform.position;
 
-  public Building(string name, Size size, float scaleFactor) {
-    this.Name = name;
-    this.Size = size;
-    this._positionOffset = new Vector3(size.Width * 0.5f, 0, size.Height * 0.5f);
-    this._scaleFactor = scaleFactor;
-  }
+  public Building (BuildingInfo info, Vector3 location, Rotation rotation) {
+    this.Info = info;
+    this.Rotation = rotation;
 
-  public GameObject Create(Vector3 location, Rotation rotation) {
-    location += this._positionOffset;
-    var gObject = (GameObject)Object.Instantiate(Resources.Load("Buildings/" + this.Name), location, Quaternion.identity);
-    gObject.transform.localScale *= this._scaleFactor;
+    this.Size = this.Info.GetRotatedSize(rotation);
+
+    var gObject = (GameObject)Object.Instantiate(Resources.Load("Buildings/" + info.Name), location + info.PositionOffset, Quaternion.identity);
+    gObject.transform.localScale *= info.ScaleFactor;
     gObject.transform.Rotate(Vector3.up * (int)rotation);
-
-    return gObject;
+    this.GObject = gObject;
   }
 }

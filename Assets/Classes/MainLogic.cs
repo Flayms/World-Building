@@ -11,10 +11,10 @@ public class MainLogic : MonoBehaviour {
   public bool GenerateTrees;
   public Map Map { get; private set; } 
 
-  public ITileElement SelectedElement { get; private set; }
+  public BuildingInfo SelectedElement { get; private set; }
   public Rotation Rotation;
 
-  private WorldInteraction _tileHover;
+  private WorldInteraction _worldInteraction;
 
   private Text fpsText;
   private float deltaTime;
@@ -32,7 +32,7 @@ public class MainLogic : MonoBehaviour {
     var map = new Map(Camera.main.transform.position);
     this.Map = map;
 
-    this._tileHover = new WorldInteraction(map, this);
+    this._worldInteraction = new WorldInteraction(map, this);
 
     this._CreateButtons();   
   }
@@ -70,26 +70,27 @@ public class MainLogic : MonoBehaviour {
     this._ShowFPS();
     Map.Update(Camera.main.transform.position);
 
-    this._tileHover.HandleHover();
+    this._worldInteraction.HandleHover();
 
-    if (Input.GetAxis("Mouse ScrollWheel") > 0f) {
-      this.Rotation = (Rotation)(((int)this.Rotation + 90) % 270);
-    }
+    if (Input.mouseScrollDelta.y > 0)
+      this.Rotation = (Rotation)(((int)this.Rotation + 90) % 360);
 
-    var chunk = this._tileHover.Chunk;
-    var location = this._tileHover.Location;
+    Debug.Log("scroll: " + this.Rotation);
+
+    var interaction = this._worldInteraction;
+    var chunk = interaction.Chunk;
+    var location = interaction.Location;
+    
     var x = location.X;
     var z = location.Y;
-    var objectMap = chunk.ObjectMap;
 
-    //if keydown and tile not yet set
     if (Input.GetMouseButtonDown(0))
-      objectMap.SetTile(x, z, this.SelectedElement, this.Rotation);
+      interaction.HandleBuildingClick(x, z, this.SelectedElement, this.Rotation);
 
 
     if (Input.GetKey(KeyCode.S)) {
       chunk.Terrain.MakeStreet(x, z);
-      this._tileHover.Sprite = Sprites.Street;
+      interaction.Sprite = Sprites.Street;
     }
   }
 
