@@ -1,4 +1,5 @@
-﻿using Libaries;
+﻿using Assets.Classes;
+using Libaries;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,14 +12,14 @@ public class MainLogic : MonoBehaviour {
   public bool GenerateTrees;
   public Map Map { get; private set; } 
 
-  public BuildingInfo SelectedElement { get; private set; }
+  public BuildingInfo SelectedElement { get; set; }
   public Rotation Rotation;
+  private Menu _menu;
 
   private WorldInteraction _worldInteraction;
 
   private Text fpsText;
   private float deltaTime;
-  private readonly List<GameObject> _buttons = new List<GameObject>(); //todo: could use array
 
   // Start is called before the first frame update
   public void Start() {
@@ -31,39 +32,13 @@ public class MainLogic : MonoBehaviour {
     Terrain.HeightCurve = this.HeightCurve;
     var map = new Map(Camera.main.transform.position);
     this.Map = map;
+    this._menu = new Menu(this);
 
     this._worldInteraction = new WorldInteraction(map, this);
-
-    this._CreateButtons();   
   }
 
-  private void _CreateButtons() {
-    //create buttons
-    var canvas = GameObject.Find("Canvas");
-    var prefab = canvas.transform.Find("btnPrefabBuilding").gameObject;
-    var width = prefab.GetComponent<RectTransform>().rect.width;
-    var position = prefab.transform.position;
-    position.x -= width;
-
-    foreach (var pair in ObjectMap.TILE_ELEMENTS) {
-      position.x += width;
-      this._CreateButton(prefab, canvas, pair.Key, position);
-    }
-  }
-
-  private void _CreateButton(GameObject prefab, GameObject canvas, string name, Vector3 position) { 
-    var gObject = Instantiate(prefab, position, Quaternion.identity);
-
-    gObject.SetActive(true);
-    gObject.transform.SetParent(canvas.transform);
-    gObject.name = name;     
-    this._buttons.Add(gObject);
-
-    //set text
-    gObject.transform.Find("Text").gameObject.transform.GetComponent<Text>().text = name;
-    //set method
-    gObject.GetComponent<Button>().onClick.AddListener(delegate { OnButtonClick(name); });
-  }
+  //todo: not the most elegant solution, menu button should call the method in menu directly
+  public void OnMenuButtonClick() => this._menu.OnMenuButtonClick();
 
   // Update is called once per frame
   public void Update() {
@@ -98,18 +73,5 @@ public class MainLogic : MonoBehaviour {
     deltaTime += (Time.deltaTime - deltaTime) * 0.1f;
     float fps = 1.0f / deltaTime;
     fpsText.text = Mathf.Ceil(fps) + " fps";
-  }
-
-  public void OnButtonClick(string objectName) {
-
-    //change selected button colour
-    foreach (var button in this._buttons) {
-      var text = button.transform.Find("Text").gameObject.transform.GetComponent<Text>().text;
-      button.GetComponent<Image>().color = text == objectName
-        ? Color.green
-        : Color.white;
-    }
-
-    this.SelectedElement = ObjectMap.TILE_ELEMENTS[objectName];
   }
 }
