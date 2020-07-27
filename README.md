@@ -1,3 +1,4 @@
 # World-Building
-just some city-building game, i guess
+just some city-building game, i guess.
+
 streets placeable with s-key
