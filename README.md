@@ -1,5 +1,5 @@
 # World-Building
-Unity City building game with infinite, generated world
+Unity City building game with an <strong>infinite</strong>, <strong>procedural generated</strong> world
 * Mountain, Lakes, Forests, Houses, Streets
 
 
